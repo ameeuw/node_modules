@@ -28,7 +28,7 @@ function Esp.new(begin, rgbled, button)
 	end
 
 	-- Initialize global PWM RGBled on pins 8,6,7 (floodlight on 6,5,7)
-	if rgbled~=nil then
+	if RGBled==nil then
 		if ( file.exists("RGBled.lua") or file.exists("RGBled.lc") ) then
 			RGBled = require("RGBled").new("PWM",{8,6,7})
 		end
@@ -63,6 +63,7 @@ function Esp.checkIP(self)
             print("Waiting for IP address...")
         else
             print("Obtained IP: "..wifi.sta.getip())
+						net.dns.setdnsserver('8.8.8.8', 0)
 						if RGBled ~= nil then
             	RGBled:breathe(3,150,52,141,0)
 						end

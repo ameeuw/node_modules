@@ -24,20 +24,16 @@ RGBled.__index = RGBled
 function RGBled.new(mode, pins, timer)
 	local self = setmetatable({}, RGBled)
 
-	self.color = {}
-	self.color.r = 0
-	self.color.g = 0
-	self.color.b = 0
+	self.color = {['on']=0, ['r']=0, ['g']=0, ['b']=0, ['h']=0, ['s']=0, ['v']=0}
+	self.oldColor = {['on']=0, ['r']=0, ['g']=0, ['b']=0, ['h']=0, ['s']=0, ['v']=0}
 
 	if mode == "PWM" then
 		-- RGB LED pins:
-		self.pinR = pins[1]
-		self.pinG = pins[2]
-		self.pinB = pins[3]
+		self.pins = {['r']=pins[1], ['g']=pins[2], ['b']=pins[3]}
 		self.mode = "PWM"
 
 		-- Set PWM modes
-		for _,pin in ipairs(pins) do
+		for k,pin in pairs(self.pins) do
 			pwm.setup(pin,300,0)
 			pwm.start(pin)
 			pwm.setduty(pin,0)
@@ -47,9 +43,9 @@ function RGBled.new(mode, pins, timer)
 	if mode == "WS2812" then
 		-- RGB LED pin:
 		if pins[1] ~= nil then
-			self.pinWS = pins[1]
+			self.pins = {['ws']=pins[1]}
 		else
-			self.pinWS = pins
+			self.pins = {['ws']=pins}
 		end
 			self.mode = "WS2812"
 	end
@@ -95,7 +91,7 @@ function RGBled.breathe(self, times, r, g, b)
             local tR = r * dim / maxSteps
             local tG = g * dim / maxSteps
             local tB = b * dim / maxSteps
-            self.setRgb(self, tR, tG, tB)
+            self:setRgb(tR, tG, tB)
             dim = dim + direction
             if dim > maxSteps then
                 direction = -1
@@ -106,7 +102,7 @@ function RGBled.breathe(self, times, r, g, b)
             end
             if count == times then
                 tmr.stop(self.timer)
-                self.setRgb(self,0,0,0)
+                self:setRgb(0,0,0)
             end
         end)
 end
@@ -115,29 +111,25 @@ function RGBled.fade(self, r, g, b)
 	local step = 0
 	local steps = 35
 	local stepDelay = 20
-	local dr = (r - self.color.r)
-	local dg = (g - self.color.g)
-	local db = (b - self.color.b)
+	local dr = (r - self.oldColor.r)
+	local dg = (g - self.oldColor.g)
+	local db = (b - self.oldColor.b)
 
 	tmr.alarm(self.timer,stepDelay,tmr.ALARM_AUTO,
 		function()
 			step = step + 1
-			local cr = math.max(0, self.color.r + step * dr / steps)
-			local cg = math.max(0, self.color.g + step * dg / steps)
-			local cb = math.max(0, self.color.b + step * db / steps)
+			local cr = math.max(0, self.oldColor.r + step * dr / steps)
+			local cg = math.max(0, self.oldColor.g + step * dg / steps)
+			local cb = math.max(0, self.oldColor.b + step * db / steps)
 
-			if self.mode == "PWM" then
-				pwm.setduty(self.pinR, cr)
-				pwm.setduty(self.pinG, cg)
-				pwm.setduty(self.pinB, cb)
-			end
-			if self.mode == "WS2812" then
-				ws2812.writergb(self.pinWS, string.char(cr,cg,cb))
-			end
+			self.setRgb(self, cr, cg, cb)
 
 			if step > steps then
 				tmr.stop(self.timer)
-				self.setRgb(self, cr, cg, cb)
+				self.oldColor.r = r
+				self.oldColor.g = g
+				self.oldColor.b = b
+				self.setRgb(self, r, g, b)
 			end
 		end)
 end
@@ -145,13 +137,13 @@ end
 function RGBled.setRgb(self, r, g, b)
 
 	if self.mode == "PWM" then
-		pwm.setduty(self.pinR, r)
-		pwm.setduty(self.pinG, g)
-		pwm.setduty(self.pinB, b)
+		pwm.setduty(self.pins.r, r)
+		pwm.setduty(self.pins.g, g)
+		pwm.setduty(self.pins.b, b)
 	end
 
 	if self.mode == "WS2812" then
-		ws2812.writergb(self.pinWS, string.char(r,g,b))
+		ws2812.writergb(self.pins.ws, string.char(r,g,b))
 	end
 
 	self.color.r = r
@@ -192,7 +184,7 @@ function RGBled.setHsb(self, h, s, b)
 	  return r * 255 / 100, g * 255 / 100, b * 255 / 100
 	end
 
-	self.fade(hsvToRgb(h,s,b))
+	self:fade(hsvToRgb(h,s,b))
 
 end
 

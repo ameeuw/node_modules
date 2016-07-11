@@ -24,7 +24,9 @@ function Lpm.new()
 	local self = setmetatable({}, Lpm)
 
 	-- self.repo = "https://raw.githubusercontent.com/ameeuw/nodemcu_modules/master/"
-	self.repo = "https://raw.githubusercontent.com/ameeuw/ESP8266_SJ4000_Remote/master/"
+	self.baseUrl = "https://api.github.com/"
+	self.repo = "repos/ameeuw/node_modules/contents/"
+
 	if file.exists('package.lua') then
 		dofile('package.lua')
 		for k,v in pairs(modules) do
@@ -53,6 +55,16 @@ function Lpm.upgrade(self, module)
 	end
 end
 
+function Lpm.list()
+	if modules ~= nil then
+		for k, v in pairs(modules) do
+			if file.exists(k..'.lua') then
+				print(k, v)
+			end
+		end
+	end
+end
+
 function Lpm.compile(self, module)
 	if module ~= nil then
 		self:compileModule(module)
@@ -74,17 +86,18 @@ end
 
 function Lpm.installModule(self, module, options, callback)
 	local filename = module..'.lua'
-	local url = self.repo..filename
+	local url = self.baseUrl..self.repo..filename
 	local auth = "Authorization: Basic <AUTH INFO HERE>\r\n"
+	-- TODO: add VERSION to 'application/vnd.github.VERSION.raw'
+	local mediatype = "Accept: application/vnd.github.raw\r\n"
 
 	print("\nDownloading: '"..module.."'")
-	http.get(url, nil, function(code, data)
+	http.get(url, mediatype, function(code, data)
 			if (code < 0) then
-				print("\nHTTP request failed:", code)
+				print("HTTP request failed:", code)
 				return code
 			else
-				--print(code, data)
-				print("\nWriting: '"..filename.."'")
+				print("Writing: '"..filename.."'")
 				file.open(filename,"w+")
 				file.write(data)
 				file.close()
@@ -126,6 +139,7 @@ function Lpm.install(self, module, options)
 								loop(cmodule)
 							end)
 					else
+						print("\n---------------------\nlpm install finished.\n---------------------\n")
 					end
 				end)
 		end

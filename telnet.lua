@@ -2,28 +2,6 @@ print("==== Remote upgrade Utility ==========")
 print("Remote Lua console provided by openthings@164.com")
 print("Server starting ......")
 
-function remove(file)
-  file.remove(file)
-end
-
-function upgrade(file)
-  print("Upgraaayyed..")
-end
-
-function view(file)
-    local _line
-    if file.open(file,"r") then
-      print("--FileView start")
-      repeat _line = file.readline()
-        if (_line~=nil) then print(string.sub(_line,1,-2))
-        end
-      until _line==nil file.close()
-      print("--FileView done.")
-    else
-      print("\r--FileView error: can't open file")
-    end
-end
-
  function connected(conn)
     print("Wifi console connected.")
     function s_output(str)
@@ -32,7 +10,7 @@ end
    	  end
     end
 
-    node.output(s_output,0)
+    node.output(s_output,1)
 
     conn:on("receive",
       function(conn, pl)
