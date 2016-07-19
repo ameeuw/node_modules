@@ -1,21 +1,23 @@
--- RestAPI.lua module
--- Author: Arne Meeuw
--- github.com/ameeuw
---
--- Simplified API for RestAPI calls to ESP8266 hardware
---
--- Initialize:
--- RestAPI = require('RestAPI').new(port)
---
--- Add action hook:
--- RestAPI:addHook(callBack, keys)
---
--- Parameters:
--- 	callBack : pointer to callBack function
---	keys : table of key-strings to identify complete entry
---
--- Run server - call this after you made sure you have a connection
--- RestAPI:runServer()
+--[[
+RestAPI.lua module
+Author: Arne Meeuw
+github.com/ameeuw
+
+Simplified API for RestAPI calls to ESP8266 hardware
+
+Initialize:
+RestAPI = require('RestAPI').new(port)
+
+Add action hook:
+RestAPI:addHook(callBack, keys)
+
+Parameters:
+	callBack : pointer to callBack function
+	keys : table of key-strings to identify complete entry
+
+Run server - call this after you made sure you have a connection
+RestAPI:runServer()
+--]]
 
 local RestAPI = {}
 RestAPI.__index = RestAPI

@@ -1,20 +1,21 @@
--- Lpm.lua module
--- Author: Arne Meeuw
--- github.com/ameeuw
---
--- Skeleton for creating a Lpm
---
--- Initialize:
--- Lpm = require('Lpm').new()
---
--- Methods:
--- Lpm:install(module, options)
--- Lpm:installModule(module, options)
--- Lpm:compile(module)
--- Lpm:compileModule(module)
---
--- options: '-c'
---
+--[[
+Lpm.lua module
+Author: Arne Meeuw
+github.com/ameeuw
+
+Skeleton for creating a Lpm
+
+Initialize:
+Lpm = require('Lpm').new()
+
+Methods:
+Lpm:install(module, options)
+Lpm:installModule(module, options)
+Lpm:compile(module)
+Lpm:compileModule(module)
+
+options: '-c'
+--]]
 
 local Lpm = {}
 Lpm.__index = Lpm
@@ -22,6 +23,7 @@ Lpm.__index = Lpm
 function Lpm.new()
 
 	local self = setmetatable({}, Lpm)
+	name = name or 'Lpm:'..string.sub(wifi.sta.getmac(),13,-1)
 
 	-- self.repo = "https://raw.githubusercontent.com/ameeuw/nodemcu_modules/master/"
 	self.baseUrl = "https://api.github.com/"
@@ -36,21 +38,14 @@ function Lpm.new()
 		print("No package.lua file found.")
 	end
 
-	if name == nil then
-		name = 'Lpm:'..string.sub(wifi.sta.getmac(),13,-1)
-	end
-
 	return self
 end
 
 function Lpm.upgrade(self, module)
   print("function call!")
 	if module ~= nil then
-
-
 	else
 		for k, v in pairs(modules) do
-
 		end
 	end
 end

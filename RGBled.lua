@@ -1,31 +1,35 @@
--- RGBled.lua module
--- Author: Arne Meeuw
--- github.com/ameeuw
---
--- Simplified API for PWM driven or WS2812 RGBled
--- Initialize:
--- RGBled = require('RGBled').new(mode, pins)
--- 		mode: "PWM" or "WS2812"w
---		pins: table of pins (use {})
--- Use:
--- RGBled:blink(times, delay, r, g, b)
---	times: how many times blink
---	delay: time between flashes in ms
---	r, g, b: Byte values of colors to blink
---
--- RGBled:setRgb(r, g, b)
--- RGBled:fade(r, g, b)
--- RGBled:blink(times, delay, r, g, b)
--- RGBled:breathe(times, r, g, b)
+--[[
+RgbLed.lua module
+Author: Arne Meeuw
+github.com/ameeuw
 
-local RGBled = {}
-RGBled.__index = RGBled
+Simplified API for PWM driven or WS2812 RgbLed
+Initialize:
+RgbLed = require('RgbLed').new(mode, pins)
+		mode: "PWM" or "WS2812"w
+		pins: table of pins (use {})
+Use:
+RgbLed:blink(times, delay, r, g, b)
+	times: how many times blink
+	delay: time between flashes in ms
+	r, g, b: Byte values of colors to blink
 
-function RGBled.new(mode, pins, timer)
-	local self = setmetatable({}, RGBled)
+RgbLed:setRgb(r, g, b)
+RgbLed:fade(r, g, b)
+RgbLed:blink(times, delay, r, g, b)
+RgbLed:breathe(times, r, g, b)
+--]]
+
+local RgbLed = {}
+RgbLed.__index = RgbLed
+
+function RgbLed.new(mode, pins, timer)
+	local self = setmetatable({}, RgbLed)
 
 	self.color = {['on']=0, ['r']=0, ['g']=0, ['b']=0, ['h']=0, ['s']=0, ['v']=0}
 	self.oldColor = {['on']=0, ['r']=0, ['g']=0, ['b']=0, ['h']=0, ['s']=0, ['v']=0}
+
+	self.timer = timer or 0
 
 	if mode == "PWM" then
 		-- RGB LED pins:
@@ -41,24 +45,14 @@ function RGBled.new(mode, pins, timer)
 
 	if mode == "WS2812" then
 		-- RGB LED pin:
-		if pins[1] ~= nil then
-			self.pins = {['ws']=pins[1]}
-		else
-			self.pins = {['ws']=pins}
-		end
+		self.pins = {['ws']=pins[1]} or {['ws']=pins}
 		self.mode = "WS2812"
-	end
-
-	if timer~=nil then
-		self.timer = timer
-	else
-		self.timer = 0
 	end
 
 	return self
 end
 
-function RGBled.blink(self, times, delay, r, g, b)
+function RgbLed:blink(times, delay, r, g, b)
 	local on=false
 	local count=0
 	tmr.alarm(self.timer,delay,1,
@@ -73,7 +67,7 @@ function RGBled.blink(self, times, delay, r, g, b)
 		end)
 end
 
-function RGBled.breathe(self, times, r, g, b)
+function RgbLed:breathe(times, r, g, b)
     local dim = 5
     local direction = 1
     local count = 0
@@ -99,7 +93,7 @@ function RGBled.breathe(self, times, r, g, b)
         end)
 end
 
-function RGBled.fade(self, r, g, b)
+function RgbLed:fade(r, g, b)
 	local step = 0
 	local steps = 35
 	local stepDelay = 20
@@ -119,7 +113,7 @@ function RGBled.fade(self, r, g, b)
 		end)
 end
 
-function RGBled.setRgb(self, r, g, b)
+function RgbLed:setRgb(r, g, b)
 	if self.mode == "PWM" then
 		pwm.setduty(self.pins.r, r)
 		pwm.setduty(self.pins.g, g)
@@ -131,7 +125,7 @@ function RGBled.setRgb(self, r, g, b)
 	self.color.r, self.color.g, self.color.b = r, g, b
 end
 
-function RGBled.setHsb(self, h, s, v)
+function RgbLed:setHsb(h, s, v)
   local r, g, b
   h = h * 5 / 18
   local i = math.floor(h * 6) - (math.floor(h * 6) % 100);
@@ -151,8 +145,8 @@ function RGBled.setHsb(self, h, s, v)
 	self:fade(r * 255 / 100, g * 255 / 100, b * 255 / 100)
 end
 
-function RGBled.stop(self)
+function RgbLed:stop()
     tmr.stop(self.timer)
 end
 
-return RGBled
+return RgbLed

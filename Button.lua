@@ -1,16 +1,16 @@
--- Button.lua module
--- Author: Arne Meeuw
--- github.com/ameeuw
---
--- Simplified API for push button handling ESP8266 hardware
---
--- Initialize:
--- Button = require('Button').new(pin, pressCallback, longPressCallback)
---
--- pin : Pin push button is connected to
--- pressCallback :  function to call when button is pressed
--- longPressCallback : function to call when button is pressed long
+--[[
+Button.lua module
+Author: Arne Meeuw
+github.com/ameeuw
 
+Simplified API for push button handling ESP8266 hardware
+
+Initialize:
+Button = require('Button').new(pin, pressCallback, longPressCallback)
+pin : Pin push button is connected to
+pressCallback :  function to call when button is pressed
+longPressCallback : function to call when button is pressed long
+--]]
 
 local Button = {}
 Button.__index = Button
@@ -23,15 +23,11 @@ function Button.new(pin, pressCallback, longPressCallback)
 	self.pressed = false
 	self.lastPress = 0
 	self.pressCallback = pressCallback
-	if longPressCallback~=nil then
-		self.longPressCallback = longPressCallback
-	else
-		self.longPressCallback = pressCallback
-	end
+	self.longPressCallback = longPressCallback or pressCallback
 
 	-- Set mode and trigger
-	gpio.mode(self.pin,gpio.INT,gpio.PULLUP)
-	gpio.trig(self.pin,'both',
+	gpio.mode(self.pin, gpio.INT, gpio.PULLUP)
+	gpio.trig(self.pin, 'both',
 		function(level)
 			self.debounce(self, self.onChange(self))
 		end)

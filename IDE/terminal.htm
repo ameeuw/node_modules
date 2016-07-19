@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>MqttLua</title>
+<!-- /*<style type="text/css" media="screen">@import "UI.css";</style>*/ -->
+<script type="text/javascript" charset="utf-8">
+
+	var connected = false;
+	var state = "";
+	var prevCommands = [];
+	var prevCounter = 0;
+	var prevLength = 2;
+	function connectSocket()
+	{
+		var wsHost = document.getElementById("wsHost").value;
+		var wsPort = document.getElementById("wsPort").value;
+		var wsProtocol = document.getElementById("wsProtocol").value;
+	  if ("WebSocket" in window) {
+
+		document.getElementById("outLua").addEventListener("keydown", function(event) {
+
+				var arrayOfLines = this.value.split("\n");
+				var inputStr = arrayOfLines[arrayOfLines.length-1].substr(2);
+
+				// return key
+				if (event.keyCode == 13) {
+					event.preventDefault();
+					send(inputStr);
+					prevLength = outLua.value.length;
+				}
+				// backspace key
+				if (event.keyCode == 8) {
+					if (outLua.selectionStart == prevLength) {
+						event.preventDefault();
+					}
+				}
+				// up-arrow and down-arrow key
+				if ((event.keyCode == 38) || (event.keyCode == 40)) {
+					event.preventDefault();
+
+					if (event.keyCode == 38)
+						prevCounter--;
+					else
+						prevCounter++;
+
+					prevCounter = Math.min(prevCounter, prevCommands.length+1);
+					prevCounter = Math.max(-1, prevCounter);
+					if (prevCounter != -1)
+						this.value = this.value.substr(0,this.value.length-inputStr.length);
+					if (prevCommands[prevCounter] != undefined){
+						this.value = this.value + prevCommands[prevCounter];}
+
+					if ((prevCounter == -1) || (prevCounter == prevCommands.length+1)) {
+						outLua.style.backgroundColor = "#00AA00";
+						setTimeout(function() {outLua.style.backgroundColor = "#000000";}, 50 );
+					}
+				}
+		});
+
+
+		send = function(str) {
+			var outLua = document.getElementById("outLua");
+			// get lines of textarea
+			var arrayOfLines = outLua.value.split("\n");
+			// get last line of textarea after '> '
+			var inputStr = arrayOfLines[arrayOfLines.length-1].substr(2);
+			// if last line is not appended yet, do so
+			if (str != inputStr) outLua.value = outLua.value + str;
+			// scroll to bottom
+			outLua.scrollTop = outLua.scrollHeight;
+			// send string to output channel
+			output.send(str);
+			// save command in array
+			prevCommands.push(str);
+			prevCounter = prevCommands.length;
+		}
+
+		document.getElementById("btnConnect").value="Connecting...";
+
+	  //  var input = new WebSocket("wss://m-e-e-u-w.de:62594/telnet/output");
+    //  var output = new WebSocket("wss://m-e-e-u-w.de:62594/telnet/input");
+ 	   var input = new WebSocket(wsProtocol+wsHost+':'+wsPort+"/telnet/output");
+		 var output = new WebSocket(wsProtocol+wsHost+':'+wsPort+"/telnet/input");
+
+		 disconnectClient = function() {
+			input.close();
+			output.close();
+		 }
+
+		 btnClick = function() {
+			 if (connected) {
+				 disconnectClient();
+			 }
+			 else {
+				 connectSocket();
+			 }
+		 }
+
+		 input.onopen = function() {
+			// Web Socket is connected, send data using send()
+			document.getElementById("btnConnect").value="Disconnect";
+			var outLua = document.getElementById("outLua")
+			outLua.focus();
+			outLua.selectionStart = outLua.value.length;
+			connected = true;
+		 };
+
+		 input.onmessage = function (evt) {
+			var receivedMsg = evt.data;
+			var outLua = document.getElementById("outLua");
+			outLua.value = outLua.value + "\n" + receivedMsg;
+			outLua.scrollTop = outLua.scrollHeight;
+			prevLength = outLua.value.length;
+		 };
+
+		 input.onclose = function()
+		 {
+			// websocket is closed.
+			document.getElementById("btnConnect").value="Connect";
+			connected = false;
+		 };
+		 output.onclose = function()
+		 {
+			// websocket is closed.
+			document.getElementById("btnConnect").value="Connect";
+			connected = false;
+		 };
+	  }
+	  else
+	  {
+		 // The browser doesn't support WebSocket
+
+		 document.getElementById("btnConnect").value="Connect";
+		 connected = false;
+	  }
+	}
+	</script>
+
+	<style>
+	.details {
+	     font-family: 'Lucida', sans-serif;
+	     font-size: 13px;
+	     color:#00ff00;
+	     width:400px; height:300px;
+	     padding-left:10px;
+			 background-color: #000000;
+	    }
+	</style>
+</head>
+<body onload=connectSocket()>
+	<select id="wsProtocol">
+		<option>wss://</option>
+		<option>ws://</option>
+	</select>
+	<input type=text id="wsHost" value="m-e-e-u-w.de">
+	<input type=number id="wsPort" value=62594>
+	<input type=button id="btnConnect" value="Connect" onclick="btnClick()">
+	<br>
+	<br><textarea class="details" id="outLua">> </textarea>
+	<br>
+	<input type=button id="btnHeap" value="Heap" onclick=send("=node.heap()")>
+	<input type=button id="btnAdc" value="ADC(0)" onclick=send("=adc.read(0)")>
+	<input type=button id="btnList" value="File Info" onclick='send("for k,v in pairs(file.list()) do print(k) end")'>
+	<input type=button id="btnLpm" value="lpm.new()" onclick=send("lpm=require('Lpm').new()")>
+	<input type=button id="btnReset" value="Reset" onclick=send("node.restart()")>
+	<br>
+</body>
+</html>

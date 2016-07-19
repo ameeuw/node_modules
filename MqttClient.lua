@@ -1,16 +1,18 @@
--- MqttClient.lua module
--- Author: Arne Meeuw
--- github.com/ameeuw
---
--- Module for a simplified MQTT client. Callbacks are (un-)registered with the corresponding functions.
--- If a global name is present it is taken as base for mqtt topic.
---
--- Initialize:
--- MqttClient = require('MqttClient').new(mqttHost, mqttPort)
---
--- Methods:
--- MqttClient:register(topic, function(topic, message) print(topic, message) end)
--- MqttClient:unregister(topic)
+--[[
+MqttClient.lua module
+Author: Arne Meeuw
+github.com/ameeuw
+
+Module for a simplified MQTT client. Callbacks are (un-)registered with the corresponding functions.
+If a global name is present it is taken as base for mqtt topic.
+
+Initialize:
+MqttClient = require('MqttClient').new(mqttHost, mqttPort)
+
+Methods:
+MqttClient:register(topic, function(topic, message) print(topic, message) end)
+MqttClient:unregister(topic)
+--]]
 
 local MqttClient = {}
 MqttClient.__index = MqttClient
@@ -18,19 +20,15 @@ MqttClient.__index = MqttClient
 function MqttClient.new(mqttHost, mqttPort)
 
 	local self = setmetatable({}, MqttClient)
+	name = name or 'MqttClient:'..string.sub(wifi.sta.getmac(),13,-1)
+	self.timer = timer or 5
 
-	if RGBled == nil then
-		if ( file.exists("RGBled.lua") or file.exists("RGBled.lc") ) then
-			RGBled = require("RGBled").new("PWM",{8,6,7})
-		end
+	if RgbLed == nil and ( ( file.exists("RgbLed.lua") or file.exists("RgbLed.lc") ) ) then
+			RgbLed = require("RgbLed").new("PWM",{8,6,7})
 	end
 
-	if name == nil then
-		name = 'MqttClient:'..string.sub(wifi.sta.getmac(),13,-1)
-	end
-
-	if RGBled ~= nil then
-		RGBled:breathe(1,0,50,0)
+	if RgbLed ~= nil then
+		RgbLed:breathe(1,0,50,0)
 	end
 
   self.mqttHost = mqttHost
@@ -45,12 +43,12 @@ function MqttClient.new(mqttHost, mqttPort)
 	-- Instantiate new MQTT client
 	self.MqttClient = mqtt.Client(name..':'..tostring(math.random(1000)), 120, "", "")
 
-	if RGBled ~= nil then
-		RGBled:breathe(-1,100,10,0)
+	if RgbLed ~= nil then
+		RgbLed:breathe(-1,100,10,0)
 	end
 
 	-- Start connecting to broker
-	tmr.alarm(5,5000, 1,
+	tmr.alarm(self.timer,5000, 1,
 		function()
 			print("Connecting MQTT")
 			self.MqttClient:connect(self.mqttHost, self.mqttPort)
@@ -59,11 +57,11 @@ function MqttClient.new(mqttHost, mqttPort)
 	-- Publish services on connect and subscribe to topic
 	self.MqttClient:on("connect",
 		function()
-    	tmr.stop(5)
-			if RGBled ~= nil then
-				RGBled:stop()
-				RGBled:setRgb(0,40,40)
-				RGBled:fade(0,0,0)
+    	tmr.stop(self.timer)
+			if RgbLed ~= nil then
+				RgbLed:stop()
+				RgbLed:setRgb(0,40,40)
+				RgbLed:fade(0,0,0)
 			end
 			print("Connected to:",self.mqttHost)
 			self.MqttClient:publish(self.topic.."services/get", self.services, 0, 1)
@@ -74,10 +72,10 @@ function MqttClient.new(mqttHost, mqttPort)
 	self.MqttClient:on("offline",
 		function(client)
 			print("Connection lost - reconnecting.")
-			if RGBled ~= nil then
-				RGBled:breathe(-1,100,10,0)
+			if RgbLed ~= nil then
+				RgbLed:breathe(-1,100,10,0)
 			end
-			tmr.alarm(5,1000, 1,
+			tmr.alarm(self.timer,1000, 1,
 				function()
 					print("...")
 					self.MqttClient:connect(self.mqttHost, self.mqttPort)
@@ -91,7 +89,7 @@ function MqttClient.new(mqttHost, mqttPort)
 					for callbackTopic, callback in pairs(self.callbacks) do
 						-- print(callbackTopic, callback)
 						if (topic == self.topic..callbackTopic) then
-							print(topic, message)
+							--print(topic, message)
 							callback(topic, message)
 						end
 					end
@@ -101,18 +99,14 @@ function MqttClient.new(mqttHost, mqttPort)
 	return self
 end
 
-function MqttClient.register(self, topic, callback)
+function MqttClient:register(topic, callback)
 	-- add to callback listeners
-	if self.callbacks[topic] == nil then
-		self.callbacks[topic] = callback
-	end
+	self.callbacks[topic] = self.callbacks[topic] or callback
 end
 
-function MqttClient.unregister(self, topic)
+function MqttClient:unregister(topic)
 	-- remove callback listener
-	if self.callbacks[topic] ~= nil then
-		self.callbacks[topic] = nil
-	end
+	self.callbacks[topic] = nil
 end
 
 return MqttClient

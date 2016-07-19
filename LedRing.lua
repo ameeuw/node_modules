@@ -1,11 +1,11 @@
--- LedRing.lua module
--- Author: Arne Meeuw
--- github.com/ameeuw
---
---
--- Initialize:
--- LedRing = require('LedRing').new(pin, numberOfLeds)
---
+--[[
+LedRing.lua module
+Author: Arne Meeuw
+github.com/ameeuw
+
+Initialize:
+LedRing = require('LedRing').new(pin, numberOfLeds)
+--]]
 
 local LedRing = {}
 LedRing.__index = LedRing
@@ -39,7 +39,7 @@ function spotToAngle(self, bgColor, spotColor, angle)
   self.buffer:set(led, ledColor[1], ledColor[2], ledColor[3])
   self.buffer:set((led+1), nexLedColor[1], nexLedColor[2], nexLedColor[3])
   self.buffer:write()
-  
+
   print("Setting led "..led.." to: "..ledColor[1]..","..ledColor[2]..","..ledColor[3])
   print("Setting led "..(led+1).." to: "..nexLedColor[1]..","..nexLedColor[2]..","..nexLedColor[3])
   end

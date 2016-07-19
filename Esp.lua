@@ -1,18 +1,20 @@
--- Esp.lua module
--- Author: Arne Meeuw
--- github.com/ameeuw
---
--- Skeleton for creating a Esp
--- This skript is launched after boot of ESP8266 and loads the Wifi configuration (expected in wifi.lua).
--- If this fails, enduser_setup is launched and the settings are saved.
--- After an IP is acquired, begin() is triggered.
---
--- Initialize:
--- Esp = require('Esp').new(begin, rgbled, button)
---
--- begin: callback function on ready
--- rgbled: create rgbled
--- button: create button
+--[[
+Esp.lua module
+Author: Arne Meeuw
+github.com/ameeuw
+
+Skeleton for creating a Esp
+This skript is launched after boot of ESP8266 and loads the Wifi configuration (expected in wifi.lua).
+If this fails, enduser_setup is launched and the settings are saved.
+After an IP is acquired, begin() is triggered.
+
+Initialize:
+Esp = require('Esp').new(begin, rgbled, button)
+
+begin: callback function on ready
+rgbled: create rgbled
+button: create button
+--]]
 
 local Esp = {}
 Esp.__index = Esp
@@ -22,27 +24,20 @@ function Esp.new(begin, rgbled, button)
 	local self = setmetatable({}, Esp)
 
 	self.begin = begin
+	name = name or 'Esp:'..string.sub(wifi.sta.getmac(),13,-1)
+	self.timer = timer or 4
 
-	if name == nil then
-		name = 'Esp:'..string.sub(wifi.sta.getmac(),13,-1)
-	end
-
-	-- Initialize global PWM RGBled on pins 8,6,7 (floodlight on 6,5,7)
-	if RGBled==nil then
-		if ( file.exists("RGBled.lua") or file.exists("RGBled.lc") ) then
-			RGBled = require("RGBled").new("PWM",{8,6,7})
-		end
+	-- Initialize global PWM RgbLed on pins 8,6,7 (floodlight on 6,5,7)
+	if RgbLed==nil and ( ( file.exists("RgbLed.lua") or file.exists("RgbLed.lc") ) ) then
+			RgbLed = require("RgbLed").new("PWM",{8,6,7})
 	end
 
 	-- Initialize global Button on pin 2
-	if button~=nil then
-		if ( file.exists("Button.lua") or file.exists("Button.lc") ) then
+	if Button==nil and ( ( file.exists("Button.lua") or file.exists("Button.lc") ) ) then
 			Button = require("Button").new(2, function() print("Short press.") end, nil)
-		end
 	end
 
 	self:start()
-
 	return self
 end
 
@@ -54,21 +49,21 @@ end
 
 -- Check for IP status
 function Esp.checkIP(self)
-		if RGBled ~= nil then
-    	RGBled:breathe(-1,100,138,11)
+		if RgbLed ~= nil then
+    	RgbLed:breathe(-1,100,138,11)
 		end
-    tmr.alarm(4,2000, 1,
+    tmr.alarm(self.timer,2000, 1,
       function()
         if wifi.sta.getip()==nil then
             print("Waiting for IP address...")
         else
             print("Obtained IP: "..wifi.sta.getip())
 						net.dns.setdnsserver('8.8.8.8', 0)
-						if RGBled ~= nil then
-            	RGBled:breathe(3,150,52,141,0)
+						if RgbLed ~= nil then
+            	RgbLed:breathe(3,150,52,141,0)
 						end
             self:begin()
-            tmr.stop(4)
+            tmr.stop(self.timer)
         end
       end)
 end
@@ -79,8 +74,8 @@ function Esp.start(self)	-- Try to open wifi.lua and start enduser_setup if it f
 	    self:checkIP()
 	else
 	    if enduser_setup~=nil then
-					if RGBled ~= nil then
-	        	RGBled:breathe(-1,0,255,11)
+					if RgbLed ~= nil then
+	        	RgbLed:breathe(-1,0,255,11)
 					end
 					if name == nil then
 		        name = 'Sonoff:'..string.sub(wifi.sta.getmac(),13,-1)
