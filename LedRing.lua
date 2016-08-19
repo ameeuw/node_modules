@@ -14,8 +14,7 @@ function LedRing.new(pin, numberOfLeds)
 	-- TODO: add timer variable to change timer number
 	local self = setmetatable({}, LedRing)
 	local self.pin = pin
-
-  self.buffer = ws2812.newBuffer(numberOfLeds, 3)
+    self.buffer = ws2812.newBuffer(numberOfLeds, 3)
 	--self.strand = require("strand")
 
 	return self
