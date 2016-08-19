@@ -70,7 +70,7 @@
 			// scroll to bottom
 			outLua.scrollTop = outLua.scrollHeight;
 			// send string to output channel
-			output.send(str);
+			connection.send(str);
 			// save command in array
 			prevCommands.push(str);
 			prevCounter = prevCommands.length;
@@ -78,14 +78,11 @@
 
 		document.getElementById("btnConnect").value="Connecting...";
 
-	  //  var input = new WebSocket("wss://m-e-e-u-w.de:62594/telnet/output");
-    //  var output = new WebSocket("wss://m-e-e-u-w.de:62594/telnet/input");
- 	   var input = new WebSocket(wsProtocol+wsHost+':'+wsPort+"/telnet/output");
-		 var output = new WebSocket(wsProtocol+wsHost+':'+wsPort+"/telnet/input");
+	  //  var input = new WebSocket("wss://m-e-e-u-w.de:62594/telnet");
+  	 var connection = new WebSocket(wsProtocol+wsHost+':'+wsPort+"/telnet");
 
 		 disconnectClient = function() {
-			input.close();
-			output.close();
+			connection.close();
 		 }
 
 		 btnClick = function() {
@@ -97,7 +94,7 @@
 			 }
 		 }
 
-		 input.onopen = function() {
+		 connection.onopen = function() {
 			// Web Socket is connected, send data using send()
 			document.getElementById("btnConnect").value="Disconnect";
 			var outLua = document.getElementById("outLua")
@@ -106,7 +103,7 @@
 			connected = true;
 		 };
 
-		 input.onmessage = function (evt) {
+		 connection.onmessage = function (evt) {
 			var receivedMsg = evt.data;
 			var outLua = document.getElementById("outLua");
 			outLua.value = outLua.value + "\n" + receivedMsg;
@@ -114,13 +111,7 @@
 			prevLength = outLua.value.length;
 		 };
 
-		 input.onclose = function()
-		 {
-			// websocket is closed.
-			document.getElementById("btnConnect").value="Connect";
-			connected = false;
-		 };
-		 output.onclose = function()
+		 connection.onclose = function()
 		 {
 			// websocket is closed.
 			document.getElementById("btnConnect").value="Connect";
