@@ -7,7 +7,9 @@ Module for a simplified MQTT client. Callbacks are (un-)registered with the corr
 If a global name is present it is taken as base for mqtt topic.
 
 Initialize:
-MqttClient = require('MqttClient').new(mqttHost, mqttPort)
+MqttClient = require('MqttClient').new(mqttHost, mqttPort, domain, services)
+	domain: nil or domain-name
+	service: nil or JSON with services
 
 Methods:
 MqttClient:register(topic, function(topic, message) print(topic, message) end)
@@ -17,7 +19,7 @@ MqttClient:unregister(topic)
 local MqttClient = {}
 MqttClient.__index = MqttClient
 
-function MqttClient.new(mqttHost, mqttPort)
+function MqttClient.new(mqttHost, mqttPort, domain, services)
 
 	local self = setmetatable({}, MqttClient)
 	name = name or 'MqttClient:'..string.sub(wifi.sta.getmac(),13,-1)
@@ -33,12 +35,13 @@ function MqttClient.new(mqttHost, mqttPort)
 
   self.mqttHost = mqttHost
   self.mqttPort = mqttPort
-	self.domain = 'burggraben'
+	self.domain = domain or 'burggraben'
 	self.topic = self.domain..'/'..name..'/'
-	self.services = '{"MqttClient" : "true", "lightsensor" : "true"}'
-
+	self.services = services or '{"MqttClient" : "true"}'
+	self.online = false
 	-- Initialize callback listener table
 	self.callbacks = {}
+	self.pubQueue = {}
 
 	-- Instantiate new MQTT client
 	self.MqttClient = mqtt.Client(name..':'..tostring(math.random(1000)), 120, "", "")
@@ -57,6 +60,7 @@ function MqttClient.new(mqttHost, mqttPort)
 	-- Publish services on connect and subscribe to topic
 	self.MqttClient:on("connect",
 		function()
+			self.online = true
     	tmr.stop(self.timer)
 			if RgbLed ~= nil then
 				RgbLed:stop()
@@ -66,11 +70,13 @@ function MqttClient.new(mqttHost, mqttPort)
 			print("Connected to:",self.mqttHost)
 			self.MqttClient:publish(self.topic.."services/get", self.services, 0, 1)
 			self.MqttClient:subscribe(self.topic.."#", 0)
+			self:processQueue()
 		end)
 
 	-- Add reconnection on disconnect
 	self.MqttClient:on("offline",
 		function(client)
+			self.online = false
 			print("Connection lost - reconnecting.")
 			if RgbLed ~= nil then
 				RgbLed:breathe(-1,100,10,0)
@@ -97,6 +103,23 @@ function MqttClient.new(mqttHost, mqttPort)
 			end)
 
 	return self
+end
+
+function MqttClient:publish(topic, message, qos, retain, callback)
+	table.insert(self.pubQueue, {['topic']=topic, ['message']=message, ['qos']=qos, ['retain']=retain, ['callback']=callback})
+	self:processQueue()
+end
+
+function MqttClient:processQueue()
+	if self.online then
+		for i,pub in ipairs(self.pubQueue) do
+			self.MqttClient:publish(pub.topic, pub.message, pub.qos, pub.retain)
+			if pub.callback ~= nil then
+				pub.callback()
+			end
+			table.remove(self.pubQueue, i)
+		end
+	end
 end
 
 function MqttClient:register(topic, callback)
