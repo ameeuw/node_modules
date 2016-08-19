@@ -3,7 +3,7 @@ Esp.lua module
 Author: Arne Meeuw
 github.com/ameeuw
 
-Skeleton for creating a Esp
+Skeleton for creating an Esp
 This skript is launched after boot of ESP8266 and loads the Wifi configuration (expected in wifi.lua).
 If this fails, enduser_setup is launched and the settings are saved.
 After an IP is acquired, begin() is triggered.
@@ -48,7 +48,7 @@ function Esp.begin(self)
 end
 
 -- Check for IP status
-function Esp.checkIP(self)
+function Esp:checkIP()
 		if RgbLed ~= nil then
     	RgbLed:breathe(-1,100,138,11)
 		end
@@ -68,7 +68,7 @@ function Esp.checkIP(self)
       end)
 end
 
-function Esp.start(self)	-- Try to open wifi.lua and start enduser_setup if it fails
+function Esp:start()	-- Try to open wifi.lua and start enduser_setup if it fails
 	if file.exists('wifi.lua') then
 	    dofile('wifi.lua')
 	    self:checkIP()
@@ -77,9 +77,7 @@ function Esp.start(self)	-- Try to open wifi.lua and start enduser_setup if it f
 					if RgbLed ~= nil then
 	        	RgbLed:breathe(-1,0,255,11)
 					end
-					if name == nil then
-		        name = 'Sonoff:'..string.sub(wifi.sta.getmac(),13,-1)
-					end
+		      name = name or 'Sonoff:'..string.sub(wifi.sta.getmac(),13,-1)
 	        wifi.setmode(wifi.STATIONAP)
 	        wifi.ap.config({ssid=name, auth=wifi.AUTH_OPEN})
 	        enduser_setup.manual(true)
