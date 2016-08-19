@@ -29,20 +29,20 @@ function Button.new(pin, pressCallback, longPressCallback)
 	gpio.mode(self.pin, gpio.INT, gpio.PULLUP)
 	gpio.trig(self.pin, 'both',
 		function(level)
-			self.debounce(self, self.onChange(self))
+			self.debounce(self, self:onChange())
 		end)
 
 	return self
 end
 
-function Button.debounce (self, func)
+function Button:debounce (func)
     local last = 0
     local delay = 100000 -- 50ms * 1000 as tmr.now() has μs resolution
 
     return function (...)
         local now = tmr.now()
         local delta = now - last
-        if delta < 0 then delta = delta + 2147483647 end; -- proposed because of delta rolling over, https://github.com/hackhitchin/esp8266-co-uk/issues/2
+        --if delta < 0 then delta = delta + 2147483647 end; -- proposed because of delta rolling over, https://github.com/hackhitchin/esp8266-co-uk/issues/2
         if delta < delay then return end;
 
         last = now
@@ -50,7 +50,7 @@ function Button.debounce (self, func)
     end
 end
 
-function Button.onChange(self)
+function Button:onChange()
     --print('The pin value has changed to '..gpio.read(self.pin))
     if self.pressed == false then
       self.lastPress = tmr.now()
