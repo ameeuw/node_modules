@@ -91,11 +91,12 @@ function MqttClient.new(mqttHost, mqttPort, domain, services)
 		-- Add on("message") function to forward incoming topic changes to existing hooks
 		self.MqttClient:on("message",
 			function(client, topic, message)
+				-- print(topic, message)
 				if message ~= nil then
 					for callbackTopic, callback in pairs(self.callbacks) do
-						-- print(callbackTopic, callback)
+						 --print(callbackTopic, callback)
 						if (topic == self.topic..callbackTopic) then
-							--print(topic, message)
+							-- print(topic, message)
 							callback(topic, message)
 						end
 					end
@@ -125,11 +126,13 @@ end
 function MqttClient:register(topic, callback)
 	-- add to callback listeners
 	self.callbacks[topic] = self.callbacks[topic] or callback
+	self.MqttClient:subscribe(self.topic..topic, 0)
 end
 
 function MqttClient:unregister(topic)
 	-- remove callback listener
 	self.callbacks[topic] = nil
+	self.MqttClient:unsubscribe(self.topic..topic)
 end
 
 return MqttClient

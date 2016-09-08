@@ -140,7 +140,6 @@ function Lpm:install(module, options)
 	if module ~= nil then
 		self:installModule(module, options, nil)
 	else
-		-- TODO: BUILD THIS FUCKING ITERATOR!!
 		local work = {}
 		for k, v in pairs(modules) do
 			print(k, v)

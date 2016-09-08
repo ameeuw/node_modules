@@ -3,35 +3,64 @@ SensorNode.lua module
 Author: Arne Meeuw
 github.com/ameeuw
 
-Skeleton for creating a SensorNode
-
 Initialize:
-SensorNode = require('SensorNode').new(sensor, sleeptime, mqttHost, mqttPort)
+SensorNode = require('SensorNode').new(sleeptime, mqttHost, mqttPort)
 
 Methods:
-SensorNode:publishValue()
+SensorNode:addSensor(sensor, opt1, opt2)
+SensorNode:measure()
+SensorNode:publishValue(value)
 SensorNode:goSleep()
  --]]
 
 local SensorNode = {}
 SensorNode.__index = SensorNode
 
-function SensorNode.new(sensor, sleeptime, mqttHost, mqttPort)
+function SensorNode.new(sleeptime, mqttHost, mqttPort)
 
 	local self = setmetatable({}, SensorNode)
 	name = name or 'SensorNode:'..string.sub(wifi.sta.getmac(),13,-1)
-	self.timer = timer or 4
+	self.timer = timer or 2
 	self.sleeptime = sleeptime or 60
+	self.waittime = waittime or 5
 	-- Keep SensorNode open to use with every SensorType
-	self.Sensor = require(sensor).new()
-	-- Instantiate MqttClient with topic and services
-	self.MqttClient = require('MqttClient').new(mqttHost, mqttPort, 'AQI', '{"MqttClient" : "true", "'..sensor..'" : "true"}')
+	--self.Sensor = require(sensor).new()
 
-	-- Take measurement after boot up
-	-- TODO: Idea is that sensor takes care of duration to get ready and only executes callback when done
-	self.Sensor:measure(function(value) self:publishValue(value) end)
+	self.sensors = {}
+	self.counter = 1
+
+	-- Instantiate MqttClient with topic and services
+	self.MqttClient = require('MqttClient').new(mqttHost, mqttPort, 'IAQ', '{"MqttClient" : "true", "'..name..'" : "true"}')
+
+	print("Measurement starting in "..self.waittime.." seconds...")
+	tmr.alarm(self.timer,self.waittime*1000, 0,
+		function()
+				self:measure()
+		end)
 
 	return self
+end
+
+function SensorNode:addSensor(sensor, opt0, opt1)
+	table.insert(self.sensors, require(sensor).new(opt0, opt1))
+end
+
+function SensorNode:measure()
+	if self.sensors[self.counter] ~= nil then
+		self.sensors[self.counter]:measure(
+			function(value)
+				self.counter = self.counter + 1
+				self:publishValue(value)
+				tmr.alarm(self.timer, 500, 0,
+					function()
+						self:measure()
+					end)
+			end)
+	else
+		-- self.counter = 1
+		-- self:goSleep()
+	end
+
 end
 
 function SensorNode:publishValue(value)
@@ -40,16 +69,20 @@ function SensorNode:publishValue(value)
 		self.MqttClient:publish(self.MqttClient.topic.."get", tostring(value), 0, 0,
 			function()
 				print("Published "..value.." to "..self.MqttClient.topic.."get")
-				self:goSleep()
+
+				if self.sensors[self.counter] == nil then
+					self:goSleep()
+				end
+
 			end)
 	else
 		print("No return value received.")
-		self:goSleep()
+		--self:goSleep()
 	end
 end
 
 function SensorNode:goSleep()
-	tmr.alarm(self.timer,2500, 0,
+	tmr.alarm(self.timer+1,2500, 0,
 		function()
 			print("Going to sleep for "..self.sleeptime.." seconds...")
 			node.dsleep(self.sleeptime*1000000)
