@@ -126,6 +126,10 @@ function RgbLed:setRgb(r, g, b)
 end
 
 function RgbLed:setHsb(h, s, v)
+	local h = h or self.color.h
+	local s = s or self.color.s
+	local v = v or self.color.v
+	
   local r, g, b
   h = h * 5 / 18
   local i = math.floor(h * 6) - (math.floor(h * 6) % 100);

@@ -35,7 +35,7 @@ function MqttClient.new(mqttHost, mqttPort, domain, services)
 
   self.mqttHost = mqttHost
   self.mqttPort = mqttPort
-	self.domain = domain or 'burggraben'
+	self.domain = domain or 'apartment'
 	self.topic = self.domain..'/'..name..'/'
 	self.services = services or '{"MqttClient" : "true"}'
 	self.online = false
