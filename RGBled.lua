@@ -114,6 +114,7 @@ function RgbLed:fade(r, g, b)
 end
 
 function RgbLed:setRgb(r, g, b)
+	r, g, b = self:correctGamma(r, g, b)
 	if self.mode == "PWM" then
 		pwm.setduty(self.pins.r, r)
 		pwm.setduty(self.pins.g, g)
@@ -125,11 +126,15 @@ function RgbLed:setRgb(r, g, b)
 	self.color.r, self.color.g, self.color.b = r, g, b
 end
 
+function RgbLed:correctGamma(r, g, b)
+	return math.sqrt(10000*r)*1000/6257, math.sqrt(10000*g)*1000/6257, math.sqrt(10000*b)*1000/6257
+end
+
 function RgbLed:setHsb(h, s, v)
 	local h = h or self.color.h
 	local s = s or self.color.s
 	local v = v or self.color.v
-	
+
   local r, g, b
   h = h * 5 / 18
   local i = math.floor(h * 6) - (math.floor(h * 6) % 100);
