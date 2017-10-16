@@ -127,12 +127,14 @@ function MqttClient:register(topic, callback)
 	-- add to callback listeners
 	self.callbacks[topic] = self.callbacks[topic] or callback
 	self.MqttClient:subscribe(self.topic..topic, 0)
+	print("Registered topic: "..self.topic..topic)
 end
 
 function MqttClient:unregister(topic)
 	-- remove callback listener
 	self.callbacks[topic] = nil
 	self.MqttClient:unsubscribe(self.topic..topic)
+	print("Unregisterd topic: "..self.topic..topic)
 end
 
 return MqttClient

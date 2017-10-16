@@ -23,7 +23,9 @@ function Esp.new(begin, rgbled, button)
 	local self = setmetatable({}, Esp)
 
 	name = name or 'Esp:'..string.sub(wifi.sta.getmac(),13,-1)
-	wifi.sta.sethostname(string.gsub(name,':','-'))
+	local hostname = string.gsub(name,':','-')
+	print(hostname)
+	--wifi.sta.sethostname(hostname)
 	self.timer = timer or 4
 	self.begin = begin
 
